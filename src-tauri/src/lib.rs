@@ -1,4 +1,4 @@
-use rodio::{source::Source, Decoder, OutputStream};
+use rodio::{Decoder, OutputStream, Sink};
 use std::{fs::File, io::BufReader};
 
 #[tauri::command]
@@ -11,9 +11,12 @@ fn play_audio(file_path: &str) -> Result<(), String> {
     let (_stream, stream_handle) = OutputStream::try_default().map_err(|err| err.to_string())?;
     let file = BufReader::new(File::open(file_path).map_err(|err| err.to_string())?);
     let source = Decoder::new(file).map_err(|err| err.to_string())?;
-    stream_handle
-        .play_raw(source.convert_samples())
-        .map_err(|err| err.to_string())?;
+    
+    println!("playing music at path {file_path}");
+
+    let sink = Sink::try_new(&stream_handle).map_err(|err| err.to_string())?;
+    sink.append(source);
+    sink.sleep_until_end();
 
     Ok(())
 }
