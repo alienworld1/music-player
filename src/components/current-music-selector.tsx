@@ -19,7 +19,8 @@ export default function CurrentMusicSelector() {
 
     try {
       const music = new Music(file);
-      await music.initialize();
+      await music.loadMetadata();
+      await music.loadSong();
       changeSong(music);
       play();
     } catch (err) {

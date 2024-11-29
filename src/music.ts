@@ -1,5 +1,6 @@
 import { IAudioMetadata, parseBuffer } from 'music-metadata';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { Howl } from 'howler';
 
 class MusicError extends Error {
   constructor(message: string) {
@@ -11,16 +12,36 @@ class MusicError extends Error {
 export default class Music {
   private filePath: string;
   private musicMetadata: IAudioMetadata | null = null;
+  private song: Howl | null = null;
 
   constructor(filePath: string) {
     this.filePath = filePath;
   }
 
-  async initialize() {
+  async loadMetadata() {
     try {
       const file = await readFile(this.filePath);
       const metadata = await parseBuffer(file, { mimeType: 'audio/mpeg' });
       this.musicMetadata = metadata;
+    } catch (err) {
+      console.error(err);
+      if (err instanceof Error) {
+        throw new MusicError(err.message);
+      }
+    }
+  }
+
+  async loadSong() {
+    try {
+      const file = await readFile(this.filePath);
+      const musicBlob = new Blob([file], { type: 'audio/mpeg' });
+      const musicUrl = URL.createObjectURL(musicBlob);
+
+      this.song = new Howl({
+        src: [musicUrl],
+        html5: true,
+        format: ['mp3'],
+      });
     } catch (err) {
       console.error(err);
       if (err instanceof Error) {
@@ -35,6 +56,25 @@ export default class Music {
 
   get path() {
     return this.filePath;
+  }
+
+  play() {
+    if (this.song) {
+      this.song.play();
+    }
+  }
+
+  pause() {
+    if (this.song) {
+      this.song.pause();
+    }
+  }
+
+  get progress() {
+    if (this.song) {
+      return this.song.seek() / this.song.duration();
+    }
+    return 0;
   }
 }
 
