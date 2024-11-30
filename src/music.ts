@@ -2,6 +2,18 @@ import { IAudioMetadata, parseBuffer } from 'music-metadata';
 import { readFile } from '@tauri-apps/plugin-fs';
 import { Howl } from 'howler';
 
+type MusicEvents =
+  | 'load'
+  | 'play'
+  | 'pause'
+  | 'stop'
+  | 'end'
+  | 'seek'
+  | 'volume'
+  | 'rate'
+  | 'mute'
+  | 'fade';
+
 class MusicError extends Error {
   constructor(message: string) {
     super(message);
@@ -75,6 +87,19 @@ export default class Music {
       return this.song.seek() / this.song.duration();
     }
     return 0;
+  }
+
+  get duration() {
+    if (this.song) {
+      return this.song.duration();
+    }
+    return 0;
+  }
+
+  setEventListener(event: MusicEvents, callback: () => void) {
+    if (this.song) {
+      this.song.on(event, callback);
+    }
   }
 }
 
